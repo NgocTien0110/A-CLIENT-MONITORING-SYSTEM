@@ -1,5 +1,7 @@
 package Client;
 
+import Server.DashboardServer;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -62,6 +64,18 @@ public class InitClient {
 
         JPanel bodyButton = new JPanel();
         jbuttonConnect = new JButton("Connect");
+        jbuttonConnect.addActionListener(e -> {
+            String ip = jtextIP.getText();
+            int port = Integer.parseInt(jtextPort.getText());
+            String name = jtextName.getText();
+            if (ip.equals("") || port == 0 || name.equals("")) {
+                JOptionPane.showMessageDialog(null, "Please enter all information");
+            } else {
+                new DashboardClient(ip, port, name);
+                this.window.dispose();
+            }
+        });
+
         jbuttonConnect.setPreferredSize(new Dimension(100, 30));
         bodyButton.add(jbuttonConnect);
 
@@ -75,7 +89,7 @@ public class InitClient {
         JPanel footer = new JPanel();
         footer.setBackground(Color.getHSBColor(0.5f, 0.5f, 0.5f));
 
-        JLabel footerLabel = new JLabel("Đặng Ngọc Tiến - 20127641");
+        JLabel footerLabel = new JLabel("Copyright by Đặng Ngọc Tiến - 20127641");
         footerLabel.setFont(new Font("Serif", Font.PLAIN, 14));
         footer.add(footerLabel);
         window.add(footer, BorderLayout.SOUTH);
@@ -83,7 +97,7 @@ public class InitClient {
         window.setVisible(true);
     }
 
-    public static void main(String[] args) {
-        new InitClient();
-    }
+//    public static void main(String[] args) {
+//        new InitClient();
+//    }
 }

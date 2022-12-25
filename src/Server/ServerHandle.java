@@ -1,10 +1,7 @@
 package Server;
 
 import javax.swing.*;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -48,7 +45,7 @@ public class ServerHandle implements Runnable {
             try {
                 s = ss.accept();
                 listaClient.add(s);
-                new Thread(new ServerReceive(s, listaClient, nameClient, map)).start();
+                new Thread(new ServerData(s, listaClient, nameClient, map)).start();
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(null, "Đóng máy chủ！");
             }

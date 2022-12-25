@@ -4,8 +4,13 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -16,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 
 /**
  * Server
@@ -36,7 +42,7 @@ public class DashboardServer {
 
 //    private int port;
     private String address;
-    public static String path = "D:\\Code\\Monitor\\Server";
+    public static String path = "D:\\Code\\Monitor";
     public static JList<String> jListClients;
     public static Map<String, String> mapPath = new HashMap<String, String>();;
     public static Map<String, Socket> mapSocket = new HashMap<String, Socket>();;
@@ -91,9 +97,28 @@ public class DashboardServer {
         jlabelPort = new JLabel("Port: " + port);
         jlabelPort.setFont(new Font("Serif", Font.PLAIN, 16));
         jbuttonLogs = new JButton("Load Logs");
+        jbuttonLogs.addActionListener(e -> {
+            JFileChooser myfileChooser = new JFileChooser();
+            myfileChooser.setDialogTitle("select file");
+            if (Files.isDirectory(Paths.get(path))) {
+                myfileChooser.setCurrentDirectory(new File(path));
+            }
+            int findresult = myfileChooser.showOpenDialog(window);
+            if (findresult == myfileChooser.APPROVE_OPTION) {
+                String path = myfileChooser.getCurrentDirectory().getPath() + "\\logs.txt";
+                readFile(path);
+            }
+        });
+
         jbuttonExit = new JButton("Exit");
         jbuttonExit.addActionListener(e -> {
-            ServerHandle.flag = false;
+            if (ServerHandle.listaClient != null && ServerHandle.listaClient.size() != 0) {
+                try {
+                    ServerData.sendAllClient(ServerHandle.listaClient, "Server die", "5", "Server");
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
             System.exit(0);
         });
         bodyLeft.add(jlabelIP);
@@ -118,13 +143,26 @@ public class DashboardServer {
         tableModel = new DefaultTableModel(column, 0);
         jtableClients = new JTable(tableModel);
         jtableClients.setRowHeight(30);
-        jtableClients.getColumnModel().getColumn(0).setPreferredWidth(50);
-        jtableClients.getColumnModel().getColumn(1).setPreferredWidth(100);
-        jtableClients.getColumnModel().getColumn(2).setPreferredWidth(200);
+        jtableClients.setModel(tableModel);
+        jtableClients.setAutoCreateRowSorter(true);
+        final TableRowSorter<TableModel> sorter = new TableRowSorter<TableModel>(tableModel);
+        jtableClients.setRowSorter(sorter);
+        jtableClients.getColumnModel().getColumn(0).setPreferredWidth(30);
+        jtableClients.getColumnModel().getColumn(1).setPreferredWidth(150);
+        jtableClients.getColumnModel().getColumn(2).setPreferredWidth(150);
         jtableClients.getColumnModel().getColumn(3).setPreferredWidth(100);
         jtableClients.getColumnModel().getColumn(4).setPreferredWidth(100);
-        jtableClients.getColumnModel().getColumn(5).setPreferredWidth(200);
+        jtableClients.getColumnModel().getColumn(5).setPreferredWidth(300);
         JScrollPane scrollPane = new JScrollPane(jtableClients);
+        jbuttonSearch.addActionListener(e -> {
+            String text = jtextSearch.getText();
+            if (text.trim().length() == 0) {
+                sorter.setRowFilter(null);
+            } else {
+                sorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
+            }
+        });
+
         bodyCenter.add(scrollPane, BorderLayout.CENTER);
 
         JPanel bodyRight = new JPanel();
@@ -142,7 +180,9 @@ public class DashboardServer {
                 if (!event.getValueIsAdjusting()) {
                     JList source = (JList) event.getSource();
                     String selected = source.getSelectedValue().toString();
-
+                    if (selected == null) {
+                        return;
+                    }
                     JFileChooser myfileChooser = new JFileChooser();
                     myfileChooser.setDialogTitle("select folder");
                     if (Files.isDirectory(Paths.get(mapPath.get(selected)))) {
@@ -152,7 +192,7 @@ public class DashboardServer {
                     if (findresult == myfileChooser.APPROVE_OPTION) {
                         String pathClient = myfileChooser.getCurrentDirectory().getAbsolutePath();
                         try {
-                            new ServerSend(mapSocket.get(selected), pathClient, "13", "Server");
+                            ServerData.sendAClient(mapSocket.get(selected), pathClient, "13", "Server");
                             DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                             Date date = new Date();
 
@@ -167,7 +207,7 @@ public class DashboardServer {
                                     selected + "," +
                                     "Change path monitoring systtem" + "}";
 
-                            WriteFile wr = new WriteFile();
+                            WriteLogs wr = new WriteLogs();
                             wr.writeFile(String.valueOf(data), path);
                             tableModel.addRow(obj);
                             jtableClients.setModel(tableModel);
@@ -200,7 +240,45 @@ public class DashboardServer {
         jtableClients.setModel(tableModel);
 
         window.setVisible(true);
-        window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        window.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (ServerHandle.listaClient != null && ServerHandle.listaClient.size() != 0) {
+                    try {
+                        ServerData.sendAllClient(ServerHandle.listaClient, "Server die", "5", "Server");
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+                System.exit(0);
+            }
+        });
+    }
+
+    public void readFile(String path) {
+        try {
+            Scanner scan = new Scanner(new File(path), "UTF-8");
+            while (scan.hasNext()) {
+                String data1 = scan.nextLine();
+                String data2 = data1.replaceAll("\\{", "");
+                String data3 = data2.replaceAll("\\}", "");
+                String[] arrOfStr = data3.split(",", -2);
+                Object[] obj = new Object[] {
+                        tableModel.getRowCount() + 1,
+                        arrOfStr[1],
+                        arrOfStr[2],
+                        arrOfStr[3],
+                        arrOfStr[4],
+                        arrOfStr[5]
+                };
+
+                tableModel.addRow(obj);
+            }
+            jtableClients.setModel(tableModel);
+        } catch (FileNotFoundException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {

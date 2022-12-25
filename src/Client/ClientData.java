@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -15,10 +16,10 @@ import java.util.Date;
  * Date 12/19/2022 - 3:32 PM
  * Description: ...
  */
-public class ClientReceive implements Runnable {
+public class ClientData implements Runnable {
     private Socket socket;
 
-    public ClientReceive(Socket socket) {
+    public ClientData(Socket socket) {
         this.socket = socket;
     }
 
@@ -26,7 +27,7 @@ public class ClientReceive implements Runnable {
         try {
             BufferedReader brIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             Thread.sleep(500);
-            while (true) {
+            while (brIn.readLine() != null) {
                 String s = brIn.readLine();
                 String[] strs = s.split("\\.");
                 String info = strs[0];
@@ -51,8 +52,7 @@ public class ClientReceive implements Runnable {
 
                         DashboardClient.tableModel.addRow(obj);
                         DashboardClient.jtableClients.setModel(DashboardClient.tableModel);
-                        WriteFile wr = new WriteFile();
-                        wr.writeFile(String.valueOf(data), DashboardClient.path, DashboardClient.nameClient);
+
                     } else {
                         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                         Date date = new Date();
@@ -71,8 +71,7 @@ public class ClientReceive implements Runnable {
 
                         DashboardClient.tableModel.addRow(obj);
                         DashboardClient.jtableClients.setModel(DashboardClient.tableModel);
-                        WriteFile wr = new WriteFile();
-                        wr.writeFile(String.valueOf(data), DashboardClient.path, DashboardClient.nameClient);
+
                     }
                 } else if (info.equals("4")) {
                     DashboardClient.jButtonConnect.setText("Log-in");
@@ -101,8 +100,8 @@ public class ClientReceive implements Runnable {
 
                     DashboardClient.tableModel.addRow(obj);
                     DashboardClient.jtableClients.setModel(DashboardClient.tableModel);
-                    WriteFile wr = new WriteFile();
-                    wr.writeFile(String.valueOf(data), DashboardClient.path, DashboardClient.nameClient);
+//                    WriteLogs wr = new WriteLogs();
+//                    wr.writeFile(String.valueOf(data), DashboardClient.path, DashboardClient.nameClient);
 
                     WatchFolder.watchService.close();
                     new Thread(new WatchFolder(this.socket)).start();
@@ -126,8 +125,7 @@ public class ClientReceive implements Runnable {
 
                     DashboardClient.tableModel.addRow(obj);
                     DashboardClient.jtableClients.setModel(DashboardClient.tableModel);
-                    WriteFile wr = new WriteFile();
-                    wr.writeFile(String.valueOf(data), DashboardClient.path, DashboardClient.nameClient);
+
                     DashboardClient.jButtonConnect.setText("Connect");
                     JOptionPane.showMessageDialog(DashboardClient.window, "Server disconnect, please connect againt");
                     WatchFolder.watchService.close();
@@ -137,9 +135,15 @@ public class ClientReceive implements Runnable {
                 }
             }
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(DashboardClient.window, "This user has left!!!");
+            JOptionPane.showMessageDialog(DashboardClient.window, "Disconnect to server");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void sendData (Socket s, Object message, String info, String name, String path) throws IOException {
+        String messages = info + ",," + message + ",," + name + ",," + path;
+        PrintWriter pwOut = new PrintWriter(s.getOutputStream(), true);
+        pwOut.println(messages);
     }
 }

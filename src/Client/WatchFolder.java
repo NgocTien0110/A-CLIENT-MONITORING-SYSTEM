@@ -70,9 +70,8 @@ public class WatchFolder implements Runnable {
 
                         DashboardClient.tableModel.addRow(obj);
                         DashboardClient.jtableClients.setModel(DashboardClient.tableModel);
-                        WriteFile wr = new WriteFile();
-                        wr.writeFile(String.valueOf(data), DashboardClient.path, DashboardClient.nameClient);
-                        new ClientSend(s, DashboardClient.nameClient, "10", "A new file is created : " + fileName,
+
+                        ClientData.sendData(s, DashboardClient.nameClient, "10", "A new file is created : " + fileName,
                                 DashboardClient.path);
                     }
 
@@ -96,9 +95,8 @@ public class WatchFolder implements Runnable {
 
                         DashboardClient.tableModel.addRow(obj);
                         DashboardClient.jtableClients.setModel(DashboardClient.tableModel);
-                        WriteFile wr = new WriteFile();
-                        wr.writeFile(String.valueOf(data), DashboardClient.path, DashboardClient.nameClient);
-                        new ClientSend(s, DashboardClient.nameClient, "11", "A file has been deleted : " + fileName,
+
+                        ClientData.sendData(s, DashboardClient.nameClient, "11", "A file has been deleted : " + fileName,
                                 DashboardClient.path);
                     }
                     if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
@@ -120,16 +118,13 @@ public class WatchFolder implements Runnable {
 
                         DashboardClient.tableModel.addRow(obj);
                         DashboardClient.jtableClients.setModel(DashboardClient.tableModel);
-                        WriteFile wr = new WriteFile();
-                        wr.writeFile(String.valueOf(data), DashboardClient.path, DashboardClient.nameClient);
-                        new ClientSend(s, DashboardClient.nameClient, "12", "A file has been modified : " + fileName,
+
+                        ClientData.sendData(s, DashboardClient.nameClient, "12", "A file has been modified : " + fileName,
                                 DashboardClient.path);
                     }
 
                 }
 
-                // STEP8: Reset the watch key everytime for continuing to use it for further
-                // event polling
                 boolean valid = watchKey.reset();
                 if (!valid) {
                     break;

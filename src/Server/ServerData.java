@@ -5,6 +5,7 @@ package Server;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -19,14 +20,14 @@ import java.util.Vector;
  * Date 12/19/2022 - 2:59 PM
  * Description: ...
  */
-public class ServerReceive implements Runnable {
+public class ServerData implements Runnable {
     private Socket socket;
     private ArrayList<Socket> listClient;
     private Vector<String> nameClient;
     private Map<String, Socket> map;
 
-    public ServerReceive(Socket s, ArrayList<Socket> listClient, Vector<String> nameClient,
-                         Map<String, Socket> map) {
+    public ServerData(Socket s, ArrayList<Socket> listClient, Vector<String> nameClient,
+                      Map<String, Socket> map) {
         this.socket = s;
         this.listClient = listClient;
         this.nameClient = nameClient;
@@ -45,14 +46,16 @@ public class ServerReceive implements Runnable {
                 String path = strs[3]; // path
 
                 if (info.equals("1")) {
-                    new ServerSend(listClient, line, "1", "");
+                    sendAllClient(listClient, line, "1", "");
                 } else if (info.equals("2")) { // 2 para login
                     if (!nameClient.contains(line)) {
                         nameClient.add(line);
+                        // thêm client vào map
                         DashboardServer.mapSocket.put(line, socket);
                         DashboardServer.mapPath.put(line, path);
                         DashboardServer.jListClients.setListData(nameClient);
-                        new ServerSend(listClient, name, "2", line);
+                        sendAllClient(listClient, name, "2", line);
+                        // get time now
                         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                         Date date = new Date();
 
@@ -64,17 +67,19 @@ public class ServerReceive implements Runnable {
                                 + path + "," +
                                 dateFormat.format(date).toString() + "," + "Connected" + "," +
                                 line + "," + name + "}";
-
-                        WriteFile wr = new WriteFile();
+                        // ghi vào file logs
+                        WriteLogs wr = new WriteLogs();
                         wr.writeFile(String.valueOf(data), DashboardServer.path);
+
+                        // hiển thị trên bảng Dashboard
                         DashboardServer.tableModel.addRow(obj);
                         DashboardServer.jtableClients.setModel(DashboardServer.tableModel);
                     } else {
                         listClient.remove(socket);
-                        new ServerSend(socket, "", "4", "server");
+                        sendAClient(socket, "", "4", "server");
                     }
-                } else if (info.equals("3")) {
-
+                } else if (info.equals("3")) { // disconnect
+                    // get time now
                     DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                     Date date = new Date();
 
@@ -86,21 +91,27 @@ public class ServerReceive implements Runnable {
                             + path + "," +
                             dateFormat.format(date).toString() + "," + "Disconnected" + "," +
                             line + "," + name + "}";
-
-                    WriteFile wr = new WriteFile();
+                    // ghi vào file logs
+                    WriteLogs wr = new WriteLogs();
                     wr.writeFile(String.valueOf(data), DashboardServer.path);
+
+                    // hiển thị trên bảng Dashboard
                     DashboardServer.tableModel.addRow(obj);
                     DashboardServer.jtableClients.setModel(DashboardServer.tableModel);
 
+                    // xóa client khỏi list
                     nameClient.remove(line);
                     listClient.remove(socket);
+
+                    // hiển thị lại danh sách client
                     DashboardServer.mapSocket.remove(line);
                     DashboardServer.mapPath.remove(line);
                     DashboardServer.jListClients.setListData(nameClient);
-                    new ServerSend(listClient, nameClient, "3", line);
+                    sendAllClient(listClient, nameClient, "3", line);
                     socket.close();
                     break; // quebra de info
-                } else if (info.equals("10")) {
+                } else if (info.equals("10")) { // created
+                    // get time now
                     DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                     Date date = new Date();
 
@@ -111,13 +122,13 @@ public class ServerReceive implements Runnable {
                             + path + "," + dateFormat.format(date).toString() + "," + "Created" + "," +
                             line + "," + name + "}";
 
-                    WriteFile wr = new WriteFile();
+                    WriteLogs wr = new WriteLogs();
                     wr.writeFile(String.valueOf(data), DashboardServer.path);
                     DashboardServer.tableModel.addRow(obj);
                     DashboardServer.jtableClients.setModel(DashboardServer.tableModel);
 
-                } else if (info.equals("11")) {
-
+                } else if (info.equals("11")) { // deleted
+                    // get time now
                     DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                     Date date = new Date();
 
@@ -128,12 +139,15 @@ public class ServerReceive implements Runnable {
                             + path + "," + dateFormat.format(date).toString() + "," +
                             "Deleted" + "," + line + "," + name + "}";
 
-                    WriteFile wr = new WriteFile();
+                    // ghi vào file logs
+                    WriteLogs wr = new WriteLogs();
                     wr.writeFile(String.valueOf(data), DashboardServer.path);
+
+                    // hiển thị trên bảng Dashboard
                     DashboardServer.tableModel.addRow(obj);
                     DashboardServer.jtableClients.setModel(DashboardServer.tableModel);
 
-                } else if (info.equals("12")) {
+                } else if (info.equals("12")) { // modified
                     DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                     Date date = new Date();
 
@@ -144,14 +158,32 @@ public class ServerReceive implements Runnable {
                             + path + "," + dateFormat.format(date).toString() + "," + "Modified" + "," +
                             line + "," + name + "}";
 
-                    WriteFile wr = new WriteFile();
+                    // ghi vào file logs
+                    WriteLogs wr = new WriteLogs();
                     wr.writeFile(String.valueOf(data), DashboardServer.path);
+
+                    // hiển thị trên bảng Dashboard
                     DashboardServer.tableModel.addRow(obj);
                     DashboardServer.jtableClients.setModel(DashboardServer.tableModel);
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void sendAClient(Socket s, Object message, String info, String name) throws IOException {
+        String messages = info + "." + message + "." + name;
+        PrintWriter pwOut = new PrintWriter(s.getOutputStream(), true);
+        pwOut.println(messages);
+    }
+
+    public static void sendAllClient(ArrayList<Socket> listClient, Object message, String info, String name) throws IOException {
+        String messages = info + "." + message + "." + name;
+        PrintWriter pwOut = null;
+        for (Socket s : listClient) { // gửi tin nhắn cho từng client cần thiết
+            pwOut = new PrintWriter(s.getOutputStream(), true);
+            pwOut.println(messages);
         }
     }
 }

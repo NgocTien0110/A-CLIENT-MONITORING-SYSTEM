@@ -8,10 +8,13 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Client
@@ -22,21 +25,23 @@ import java.util.logging.Logger;
 public class DashboardClient {
     public static JFrame window;
     private JLabel jLabelIP;
+    private JTextField jTextFieldIP;
     private JLabel jLabelPort;
+    private JTextField jTextFieldPort;
     private JLabel jLabelName;
     public static JLabel jLabelPath;
-    private JButton jButtonChooseFile;
+//    private JButton jButtonChooseFile;
     public static JButton jButtonConnect;
-    private JButton jButtonLogs;
+//    private JButton jButtonLogs;
     private JButton jButtonExit;
     private JTextField jtextSearch;
     private JButton jbuttonSearch;
     public static JTable jtableClients;
     public static DefaultTableModel tableModel;
     public static Socket socket = null;
-    public static String path = "D:\\Code\\Monitor\\Client";
+    public static String path = "D:\\Code\\Monitor";
     private String globalIp;
-    private int port;
+    private int globaPort;
     public static String nameClient;
 
 
@@ -49,8 +54,8 @@ public class DashboardClient {
                 nameClient = name;
                 globalIp = ip;
                 port = port;
-                new ClientSend(socket, name, "2", "Connected", path);
-                new Thread(new ClientReceive(socket)).start();
+                ClientData.sendData(socket, name, "2", "Connected", path);
+                new Thread(new ClientData(socket)).start();
 
             } catch (Exception e2) {
                 JOptionPane.showMessageDialog(window, "Can't connect check ip and port");
@@ -79,9 +84,74 @@ public class DashboardClient {
         JPanel bodyLeft = new JPanel();
         bodyLeft.setBorder(BorderFactory.createTitledBorder("Information"));
         bodyLeft.setLayout(new GridLayout(8, 1, 10, 10));
-        bodyLeft.setPreferredSize(new Dimension(300, 0));
+        bodyLeft.setPreferredSize(new Dimension(200, 0));
 
-        jButtonConnect = new JButton("Connect");
+        jButtonConnect = new JButton("Disconnect");
+        jButtonConnect.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (socket == null) {
+                    try {
+                        globalIp = jTextFieldIP.getText();
+                        globaPort = Integer.parseInt(jTextFieldPort.getText());
+                        socket = new Socket(globalIp, globaPort);
+                        jButtonConnect.setText("Disconnec");
+
+                        ClientData.sendData(socket, nameClient, "2", "Connected", path);
+                        new Thread(new ClientData(socket)).start();
+                        new Thread(new WatchFolder(socket)).start();
+
+                        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                        Date date = new Date();
+
+                        Object[] obj = new Object[] { tableModel.getRowCount() + 1, path,
+                                dateFormat.format(date), "Connected",
+                                nameClient,
+                                "(Notification) " + nameClient + " connected to server!" };
+
+                        String data = "{" + (DashboardClient.tableModel.getRowCount() + 1) + ","
+                                + DashboardClient.path + "," +
+                                dateFormat.format(date).toString() + "," + "Connected" + "," +
+                                DashboardClient.nameClient + "," +
+                                "(Notification) " + DashboardClient.nameClient + " connected to the server!" + "}";
+
+//                        WriteLogs wr = new WriteLogs();
+//                        wr.writeFile(String.valueOf(data), DashboardClient.path, DashboardClient.nameClient);
+                        tableModel.addRow(obj);
+                        jtableClients.setModel(tableModel);
+                    } catch (Exception e2) {
+                        JOptionPane.showMessageDialog(window, "Can't connect check ip and port");
+                    }
+                } else if (socket != null && socket.isConnected()) {
+                    try {
+                        ClientData.sendData(socket, nameClient, "3", "Disconnected", path);
+                        jButtonConnect.setText("Connect");
+                        WatchFolder.watchService.close();
+                        socket.close();
+                        socket = null;
+                        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                        Date date = new Date();
+
+                        Object[] obj = new Object[] { tableModel.getRowCount() + 1, path,
+                                dateFormat.format(date), "Disconnected",
+                                nameClient,
+                                "(Notification) " + nameClient + " disconnected to server!" };
+
+                        String data = "{" + (DashboardClient.tableModel.getRowCount() + 1) + ","
+                                + DashboardClient.path + "," +
+                                dateFormat.format(date).toString() + "," + "Disconnected" + "," +
+                                DashboardClient.nameClient + "," +
+                                "(Notification) " + DashboardClient.nameClient + " disconnected to the server!" + "}";
+
+//                        WriteLogs wr = new WriteLogs();
+//                        wr.writeFile(String.valueOf(data), DashboardClient.path, DashboardClient.nameClient);
+                        tableModel.addRow(obj);
+                        jtableClients.setModel(tableModel);
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+            }
+        });
 
         JPanel bodyName = new JPanel();
         JLabel labelName = new JLabel("Name: ");
@@ -94,18 +164,24 @@ public class DashboardClient {
         JPanel bodyIP = new JPanel();
         JLabel labelIp = new JLabel("IP: ");
         labelIp.setFont(new Font("Serif", Font.PLAIN, 16));
-        jLabelIP = new JLabel(ip);
-        jLabelIP.setFont(new Font("Serif", Font.PLAIN, 16));
+        jTextFieldIP = new JTextField(ip);
+        jTextFieldIP.setFont(new Font("Serif", Font.PLAIN, 16));
+        jTextFieldIP.setPreferredSize(new Dimension(130, 20));
+//        jLabelIP = new JLabel(ip);
+//        jLabelIP.setFont(new Font("Serif", Font.PLAIN, 16));
         bodyIP.add(labelIp);
-        bodyIP.add(jLabelIP);
+        bodyIP.add(jTextFieldIP);
 
         JPanel bodyPort = new JPanel();
         JLabel labelPort = new JLabel("Port: ");
         labelPort.setFont(new Font("Serif", Font.PLAIN, 16));
-        jLabelPort = new JLabel(String.valueOf(port));
-        jLabelPort.setFont(new Font("Serif", Font.PLAIN, 16));
+        jTextFieldPort = new JTextField(String.valueOf(port));
+        jTextFieldPort.setFont(new Font("Serif", Font.PLAIN, 16));
+        jTextFieldPort.setPreferredSize(new Dimension(100, 20));
+//        jLabelPort = new JLabel(String.valueOf(port));
+//        jLabelPort.setFont(new Font("Serif", Font.PLAIN, 16));
         bodyPort.add(labelPort);
-        bodyPort.add(jLabelPort);
+        bodyPort.add(jTextFieldPort);
 
         JPanel bodyPath = new JPanel();
         JLabel labelPath = new JLabel("Path: ");
@@ -115,17 +191,32 @@ public class DashboardClient {
         bodyPath.add(labelPath);
         bodyPath.add(jLabelPath);
 
-        jButtonChooseFile = new JButton("Choose File");
-        jButtonLogs = new JButton("Load Logs");
+//        jButtonChooseFile = new JButton("Choose File");
+//        jButtonLogs = new JButton("Load Logs");
         jButtonExit = new JButton("Exit");
+        jButtonExit.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (socket != null && socket.isConnected()) {
+                    try {
+                        ClientData.sendData(socket, nameClient, "3", "Disconnected", path);
+                        WatchFolder.watchService.close();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+                System.exit(0);
+            }
+        });
+
+
 
         bodyLeft.add(jButtonConnect);
         bodyLeft.add(bodyName);
         bodyLeft.add(bodyIP);
         bodyLeft.add(bodyPort);
         bodyLeft.add(bodyPath);
-        bodyLeft.add(jButtonChooseFile);
-        bodyLeft.add(jButtonLogs);
+//        bodyLeft.add(jButtonChooseFile);
+//        bodyLeft.add(jButtonLogs);
         bodyLeft.add(jButtonExit);
 
         String column[] = {"STT", "Monitoring directory", "Time", "Action", "Name Client", "Description"};
@@ -138,6 +229,7 @@ public class DashboardClient {
         jtextSearch.setPreferredSize(new Dimension(200, 30));
         jbuttonSearch = new JButton("Search");
         jbuttonSearch.setPreferredSize(new Dimension(100, 30));
+
         bodyCenterSearch.add(jtextSearch);
         bodyCenterSearch.add(jbuttonSearch);
         bodyCenter.add(bodyCenterSearch, BorderLayout.NORTH);
@@ -161,12 +253,12 @@ public class DashboardClient {
         final TableRowSorter<TableModel> sorter = new TableRowSorter<TableModel>(tableModel);
         jtableClients.setRowSorter(sorter);
         TableColumnModel columnModel = jtableClients.getColumnModel();
-        jtableClients.getColumnModel().getColumn(0).setPreferredWidth(50);
-        jtableClients.getColumnModel().getColumn(1).setPreferredWidth(100);
-        jtableClients.getColumnModel().getColumn(2).setPreferredWidth(200);
+        jtableClients.getColumnModel().getColumn(0).setPreferredWidth(30);
+        jtableClients.getColumnModel().getColumn(1).setPreferredWidth(150);
+        jtableClients.getColumnModel().getColumn(2).setPreferredWidth(130);
         jtableClients.getColumnModel().getColumn(3).setPreferredWidth(100);
         jtableClients.getColumnModel().getColumn(4).setPreferredWidth(100);
-        jtableClients.getColumnModel().getColumn(5).setPreferredWidth(200);
+        jtableClients.getColumnModel().getColumn(5).setPreferredWidth(300);
         JScrollPane scrollPane = new JScrollPane(jtableClients);
         jbuttonSearch.addActionListener(new ActionListener() {
             @Override
@@ -195,7 +287,19 @@ public class DashboardClient {
 
         window.add(footer, BorderLayout.SOUTH);
         window.setVisible(true);
-        window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        window.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                if (socket != null && socket.isConnected()) {
+                    try {
+                        ClientData.sendData(socket, nameClient, "3", "Disconnected", path);
+                        WatchFolder.watchService.close();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+                System.exit(0);
+            }
+        });
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -205,26 +309,7 @@ public class DashboardClient {
 //            } else {
 //                JOptionPane.showMessageDialog(window, "You are connected");
 //            }
-        } else if (e.getSource() == jButtonChooseFile) {
-//            if (socket != null) {
-//                JFileChooser fileChooser = new JFileChooser();
-//                fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-//                int result = fileChooser.showOpenDialog(window);
-//                if (result == JFileChooser.APPROVE_OPTION) {
-//                    path = fileChooser.getSelectedFile().getAbsolutePath();
-//                    jLabelPath.setText(path);
-//                    new ClientSend(socket, nameClient, "2", "Connected", path);
-//                }
-//            } else {
-//                JOptionPane.showMessageDialog(window, "You are not connected");
-//            }
-        } else if (e.getSource() == jButtonLogs) {
-//            if (socket != null) {
-//                new ClientSend(socket, nameClient, "4", "Load Logs", path);
-//            } else {
-//                JOptionPane.showMessageDialog(window, "You are not connected");
-//            }
-        } else if (e.getSource() == jButtonExit) {
+        }  else if (e.getSource() == jButtonExit) {
 //            if (socket != null) {
 //                new ClientSend(socket, nameClient, "3", "Exit", path);
 //                try {

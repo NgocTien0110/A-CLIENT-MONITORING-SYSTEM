@@ -34,100 +34,77 @@ public class ClientData implements Runnable {
                 String name = strs[2], line = strs[1];
                 if (info.equals("1")) {
                 } else if (info.equals("2") || info.equals("3")) {
-                    if (info.equals("2")) {
-                        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                        Date date = new Date();
-
+                    // get time now
+                    DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                    Date date = new Date();
+                    if (info.equals("2")) { // connect
+                        // thêm vào table
                         Object[] obj = new Object[] { DashboardClient.tableModel.getRowCount() + 1,
                                 DashboardClient.path,
                                 dateFormat.format(date), "Connected",
                                 DashboardClient.nameClient,
-                                "(Notification) " + DashboardClient.nameClient + " connected to server!" };
-
-                        String data = "{" + (DashboardClient.tableModel.getRowCount() + 1) + ","
-                                + DashboardClient.path + "," +
-                                dateFormat.format(date).toString() + "," + "Connected" + "," +
-                                DashboardClient.nameClient + "," +
-                                "(Notification) " + DashboardClient.nameClient + " connected to server!" + "}";
-
+                                DashboardClient.nameClient + " connected to server!" };
                         DashboardClient.tableModel.addRow(obj);
                         DashboardClient.jtableClients.setModel(DashboardClient.tableModel);
-
-                    } else {
-                        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                        Date date = new Date();
-
+                    } else { // disconnect
+                        // thêm vào table
                         Object[] obj = new Object[] { DashboardClient.tableModel.getRowCount() + 1,
                                 DashboardClient.path,
                                 dateFormat.format(date), "Disconnected",
                                 DashboardClient.nameClient,
-                                "(Notification)" + DashboardClient.nameClient + " disconnected to server!" };
-
-                        String data = "{" + (DashboardClient.tableModel.getRowCount() + 1) + ","
-                                + DashboardClient.path + "," +
-                                dateFormat.format(date).toString() + "," + "Disconnected" + "," +
-                                DashboardClient.nameClient + "," +
-                                "(Notification) " + DashboardClient.nameClient + " disconnected to server!" + "}";
-
+                                DashboardClient.nameClient + " disconnected to server!" };
                         DashboardClient.tableModel.addRow(obj);
                         DashboardClient.jtableClients.setModel(DashboardClient.tableModel);
-
                     }
                 } else if (info.equals("4")) {
                     DashboardClient.jButtonConnect.setText("Log-in");
                     DashboardClient.socket.close();
                     DashboardClient.socket = null;
-                    JOptionPane.showMessageDialog(DashboardClient.window, "Someone used this username!!!");
+                    JOptionPane.showMessageDialog(DashboardClient.window, "Someone used this username!");
                     break;
-                } else if (info.equals("13")) {
-                    DashboardClient.path = line + "\\";
-                    DashboardClient.jLabelPath.setText(line);
-
+                } else if (info.equals("13")) { // thay đổi path
+                    // get time now
                     DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                     Date date = new Date();
 
+                    // đổi path trong giao diện
+                    DashboardClient.path = line + "\\";
+                    DashboardClient.jLabelPath.setText(line);
+
+                    // thêm vào table
                     Object[] obj = new Object[] { DashboardClient.tableModel.getRowCount() + 1,
                             DashboardClient.path,
                             dateFormat.format(date), "Change path",
                             DashboardClient.nameClient,
-                            "(Notification) Server send change path" };
-
-                    String data = "{" + (DashboardClient.tableModel.getRowCount() + 1) + ","
-                            + DashboardClient.path + "," +
-                            dateFormat.format(date).toString() + "," + "Change path" + "," +
-                            DashboardClient.nameClient + "," +
-                            "(Notification) Server send change path" + "}";
-
+                            "Server send change path" };
                     DashboardClient.tableModel.addRow(obj);
                     DashboardClient.jtableClients.setModel(DashboardClient.tableModel);
-//                    WriteLogs wr = new WriteLogs();
-//                    wr.writeFile(String.valueOf(data), DashboardClient.path, DashboardClient.nameClient);
 
+                    // đóng watch service và mở lại watch service mới
                     WatchFolder.watchService.close();
                     new Thread(new WatchFolder(this.socket)).start();
 
                     break;
-                } else if (info.equals("5")) {
+                } else if (info.equals("5")) { // Die server
+                    // get time now
                     DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                     Date date = new Date();
 
+                    // thêm vào table
                     Object[] obj = new Object[] { DashboardClient.tableModel.getRowCount() + 1,
                             DashboardClient.path,
                             dateFormat.format(date), "Server die",
                             DashboardClient.nameClient,
-                            "(Notification) Server has been die" };
-
-                    String data = "{" + (DashboardClient.tableModel.getRowCount() + 1) + ","
-                            + DashboardClient.path + "," +
-                            dateFormat.format(date).toString() + "," + "Server die" + "," +
-                            DashboardClient.nameClient + "," +
-                            "(Notification) Server has been die" + "}";
-
+                            "Server has been die" };
                     DashboardClient.tableModel.addRow(obj);
                     DashboardClient.jtableClients.setModel(DashboardClient.tableModel);
 
+                    // set nut connect
                     DashboardClient.jButtonConnect.setText("Connect");
+                    // thông báo server die
                     JOptionPane.showMessageDialog(DashboardClient.window, "Server disconnect, please connect againt");
+
+                    // đóng socket và watch service
                     WatchFolder.watchService.close();
                     DashboardClient.socket.close();
                     DashboardClient.socket = null;
@@ -141,6 +118,7 @@ public class ClientData implements Runnable {
         }
     }
 
+    // gửi thông tin đến server
     public static void sendData (Socket s, Object message, String info, String name, String path) throws IOException {
         String messages = info + ",," + message + ",," + name + ",," + path;
         PrintWriter pwOut = new PrintWriter(s.getOutputStream(), true);

@@ -40,8 +40,8 @@ public class DashboardClient {
     public static DefaultTableModel tableModel;
     public static Socket socket = null;
     public static String path = "D:\\Code\\Monitor";
-    private String globalIp;
-    private int globaPort;
+    private String ipClient;
+    private int portClient;
     public static String nameClient;
 
 
@@ -52,15 +52,17 @@ public class DashboardClient {
             try {
                 socket = new Socket(ip, port);
                 nameClient = name;
-                globalIp = ip;
-                port = port;
-                ClientData.sendData(socket, name, "2", "Connected", path);
+                ipClient = ip;
+                portClient = port;
+                ClientData.sendData(socket, name, "2", "Connected", path); // info = 2 : connected
                 new Thread(new ClientData(socket)).start();
 
             } catch (Exception e2) {
-                JOptionPane.showMessageDialog(window, "Can't connect check ip and port");
+                // nếu không kết nối được
+                JOptionPane.showMessageDialog(window, "Can't connect to server! Please check your IP and Port!");
             }
         }
+        // tạo giao diện
         init(ip, port, name);
         new Thread(new WatchFolder(socket)).start();
     }
@@ -89,61 +91,54 @@ public class DashboardClient {
         jButtonConnect = new JButton("Disconnect");
         jButtonConnect.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (socket == null) {
+                if (socket == null) { // nếu chưa kết nối thì kết nối
                     try {
-                        globalIp = jTextFieldIP.getText();
-                        globaPort = Integer.parseInt(jTextFieldPort.getText());
-                        socket = new Socket(globalIp, globaPort);
-                        jButtonConnect.setText("Disconnec");
+                        // get ip and port
+                        ipClient = jTextFieldIP.getText();
+                        portClient = Integer.parseInt(jTextFieldPort.getText());
 
+                        // taọ socket
+                        socket = new Socket(ipClient, portClient);
+                        // set button connect
+                        jButtonConnect.setText("Disconnect");
+
+                        //gửi data lên server và bắt đầu thread nhận data
                         ClientData.sendData(socket, nameClient, "2", "Connected", path);
                         new Thread(new ClientData(socket)).start();
                         new Thread(new WatchFolder(socket)).start();
 
+                        // get time now
                         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                         Date date = new Date();
 
+                        // thêm vào table
                         Object[] obj = new Object[] { tableModel.getRowCount() + 1, path,
                                 dateFormat.format(date), "Connected",
                                 nameClient,
-                                "(Notification) " + nameClient + " connected to server!" };
-
-                        String data = "{" + (DashboardClient.tableModel.getRowCount() + 1) + ","
-                                + DashboardClient.path + "," +
-                                dateFormat.format(date).toString() + "," + "Connected" + "," +
-                                DashboardClient.nameClient + "," +
-                                "(Notification) " + DashboardClient.nameClient + " connected to the server!" + "}";
-
-//                        WriteLogs wr = new WriteLogs();
-//                        wr.writeFile(String.valueOf(data), DashboardClient.path, DashboardClient.nameClient);
+                               nameClient + " connected to server!" };
                         tableModel.addRow(obj);
                         jtableClients.setModel(tableModel);
                     } catch (Exception e2) {
-                        JOptionPane.showMessageDialog(window, "Can't connect check ip and port");
+                        JOptionPane.showMessageDialog(window, "Can't connect to server! Please check your IP and Port!");
                     }
-                } else if (socket != null && socket.isConnected()) {
+                } else if (socket != null && socket.isConnected()) { // nếu đã kết nối thì ngắt kết nối
                     try {
-                        ClientData.sendData(socket, nameClient, "3", "Disconnected", path);
+                        // set button connect
                         jButtonConnect.setText("Connect");
+
+                        // gửi data lên server và đóng socket và thread nhận data
+                        ClientData.sendData(socket, nameClient, "3", "Disconnected", path);
                         WatchFolder.watchService.close();
                         socket.close();
                         socket = null;
+
+                        // get time now
                         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                         Date date = new Date();
-
                         Object[] obj = new Object[] { tableModel.getRowCount() + 1, path,
                                 dateFormat.format(date), "Disconnected",
                                 nameClient,
-                                "(Notification) " + nameClient + " disconnected to server!" };
-
-                        String data = "{" + (DashboardClient.tableModel.getRowCount() + 1) + ","
-                                + DashboardClient.path + "," +
-                                dateFormat.format(date).toString() + "," + "Disconnected" + "," +
-                                DashboardClient.nameClient + "," +
-                                "(Notification) " + DashboardClient.nameClient + " disconnected to the server!" + "}";
-
-//                        WriteLogs wr = new WriteLogs();
-//                        wr.writeFile(String.valueOf(data), DashboardClient.path, DashboardClient.nameClient);
+                                nameClient + " disconnected to server!" };
                         tableModel.addRow(obj);
                         jtableClients.setModel(tableModel);
                     } catch (IOException e1) {
@@ -167,8 +162,6 @@ public class DashboardClient {
         jTextFieldIP = new JTextField(ip);
         jTextFieldIP.setFont(new Font("Serif", Font.PLAIN, 16));
         jTextFieldIP.setPreferredSize(new Dimension(130, 20));
-//        jLabelIP = new JLabel(ip);
-//        jLabelIP.setFont(new Font("Serif", Font.PLAIN, 16));
         bodyIP.add(labelIp);
         bodyIP.add(jTextFieldIP);
 
@@ -178,8 +171,6 @@ public class DashboardClient {
         jTextFieldPort = new JTextField(String.valueOf(port));
         jTextFieldPort.setFont(new Font("Serif", Font.PLAIN, 16));
         jTextFieldPort.setPreferredSize(new Dimension(100, 20));
-//        jLabelPort = new JLabel(String.valueOf(port));
-//        jLabelPort.setFont(new Font("Serif", Font.PLAIN, 16));
         bodyPort.add(labelPort);
         bodyPort.add(jTextFieldPort);
 
@@ -191,14 +182,14 @@ public class DashboardClient {
         bodyPath.add(labelPath);
         bodyPath.add(jLabelPath);
 
-//        jButtonChooseFile = new JButton("Choose File");
-//        jButtonLogs = new JButton("Load Logs");
+
         jButtonExit = new JButton("Exit");
         jButtonExit.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (socket != null && socket.isConnected()) {
                     try {
                         ClientData.sendData(socket, nameClient, "3", "Disconnected", path);
+                        socket.close();
                         WatchFolder.watchService.close();
                     } catch (IOException e1) {
                         e1.printStackTrace();
@@ -208,15 +199,11 @@ public class DashboardClient {
             }
         });
 
-
-
         bodyLeft.add(jButtonConnect);
         bodyLeft.add(bodyName);
         bodyLeft.add(bodyIP);
         bodyLeft.add(bodyPort);
         bodyLeft.add(bodyPath);
-//        bodyLeft.add(jButtonChooseFile);
-//        bodyLeft.add(jButtonLogs);
         bodyLeft.add(jButtonExit);
 
         String column[] = {"STT", "Monitoring directory", "Time", "Action", "Name Client", "Description"};
@@ -234,6 +221,7 @@ public class DashboardClient {
         bodyCenterSearch.add(jbuttonSearch);
         bodyCenter.add(bodyCenterSearch, BorderLayout.NORTH);
 
+        // get dữ liệu
         tableModel = new DefaultTableModel(column, 0){
             public Class getColumnClass(int column) {
                 Class returnValue;
@@ -250,6 +238,7 @@ public class DashboardClient {
 
         jtableClients.setModel(tableModel);
         jtableClients.setAutoCreateRowSorter(true);
+        // sort table
         final TableRowSorter<TableModel> sorter = new TableRowSorter<TableModel>(tableModel);
         jtableClients.setRowSorter(sorter);
         TableColumnModel columnModel = jtableClients.getColumnModel();
@@ -260,6 +249,8 @@ public class DashboardClient {
         jtableClients.getColumnModel().getColumn(4).setPreferredWidth(100);
         jtableClients.getColumnModel().getColumn(5).setPreferredWidth(300);
         JScrollPane scrollPane = new JScrollPane(jtableClients);
+
+        // filter table
         jbuttonSearch.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -292,6 +283,7 @@ public class DashboardClient {
                 if (socket != null && socket.isConnected()) {
                     try {
                         ClientData.sendData(socket, nameClient, "3", "Disconnected", path);
+                        socket.close();
                         WatchFolder.watchService.close();
                     } catch (IOException e1) {
                         e1.printStackTrace();
@@ -302,25 +294,6 @@ public class DashboardClient {
         });
     }
 
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == jButtonConnect) {
-//            if (socket == null) {
-//                connect();
-//            } else {
-//                JOptionPane.showMessageDialog(window, "You are connected");
-//            }
-        }  else if (e.getSource() == jButtonExit) {
-//            if (socket != null) {
-//                new ClientSend(socket, nameClient, "3", "Exit", path);
-//                try {
-//                    socket.close();
-//                } catch (IOException ex) {
-//                    Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-//            }
-//            System.exit(0);
-        }
-    }
 
 //    public static void main(String[] args) {
 //        new DashboardClient();

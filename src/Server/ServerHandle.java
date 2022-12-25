@@ -16,26 +16,26 @@ import java.util.Vector;
  * Description: ...
  */
 public class ServerHandle implements Runnable {
-    private int porta;
+    private int portServer;
     public static ArrayList<Socket> listaClient = null;
-    public static Vector<String> nameClient = null; // thread security
+    public static Vector<String> nameClient = null;
     public static Map<String, Socket> map = null;
     public static ServerSocket ss = null;
     public static boolean flag = true;
 
-    public ServerHandle(int porta) throws IOException {
-        this.porta = porta;
+    public ServerHandle(int portSv) throws IOException {
+        this.portServer = portSv;
     }
 
     public void run() {
         Socket s = null;
-        listaClient = new ArrayList<Socket>();
-        nameClient = new Vector<String>();
+        listaClient = new ArrayList<Socket>();  // danh sách client
+        nameClient = new Vector<String>();  // danh sách tên client
         map = new HashMap<String, Socket>(); // name to socket one on one map
 
-        System.out.println("Máy chủ đã khởi động!");
+        System.out.println("Server is running...");
         try {
-            ss = new ServerSocket(porta);
+            ss = new ServerSocket(portServer);
             System.out.println(ss.getLocalSocketAddress());
         } catch (IOException e1) {
             e1.printStackTrace();
@@ -47,7 +47,7 @@ public class ServerHandle implements Runnable {
                 listaClient.add(s);
                 new Thread(new ServerData(s, listaClient, nameClient, map)).start();
             } catch (IOException e) {
-                JOptionPane.showMessageDialog(null, "Đóng máy chủ！");
+                JOptionPane.showMessageDialog(null, "Close server");
             }
         }
     }

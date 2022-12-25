@@ -42,7 +42,7 @@ public class DashboardServer {
 
 //    private int port;
     private String address;
-    public static String path = "D:\\Code\\Monitor";
+    public static String path;
     public static JList<String> jListClients;
     public static Map<String, String> mapPath = new HashMap<String, String>();;
     public static Map<String, Socket> mapSocket = new HashMap<String, Socket>();;
@@ -53,9 +53,14 @@ public class DashboardServer {
         } else {
             if (port != 0) {
                 try {
+                    // khởi tạo server
                     ServerHandle.flag = true;
-                    address = InetAddress.getLocalHost().getHostAddress();
                     new Thread(new ServerHandle(port)).start();
+
+                    // get ip address of server
+                    address = InetAddress.getLocalHost().getHostAddress();
+
+                    // get đường dẫn
                     path = Paths.get(".").normalize().toAbsolutePath().toString();
                 } catch (IOException e1) {
                     JOptionPane.showMessageDialog(window, "Cannot start server");
@@ -145,6 +150,7 @@ public class DashboardServer {
         jtableClients.setRowHeight(30);
         jtableClients.setModel(tableModel);
         jtableClients.setAutoCreateRowSorter(true);
+        // sort table
         final TableRowSorter<TableModel> sorter = new TableRowSorter<TableModel>(tableModel);
         jtableClients.setRowSorter(sorter);
         jtableClients.getColumnModel().getColumn(0).setPreferredWidth(30);
@@ -154,6 +160,8 @@ public class DashboardServer {
         jtableClients.getColumnModel().getColumn(4).setPreferredWidth(100);
         jtableClients.getColumnModel().getColumn(5).setPreferredWidth(300);
         JScrollPane scrollPane = new JScrollPane(jtableClients);
+
+        // filter table
         jbuttonSearch.addActionListener(e -> {
             String text = jtextSearch.getText();
             if (text.trim().length() == 0) {
@@ -177,17 +185,21 @@ public class DashboardServer {
         jListClients.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent event) {
-                if (!event.getValueIsAdjusting()) {
+                if (!event.getValueIsAdjusting()) { // get ra client duoc chon
                     JList source = (JList) event.getSource();
-                    String selected = source.getSelectedValue().toString();
-                    if (selected == null) {
+                    if (source.getSelectedValue() == null) {
                         return;
                     }
+                    String selected = source.getSelectedValue().toString();
+
+                    // chọn folder
                     JFileChooser myfileChooser = new JFileChooser();
                     myfileChooser.setDialogTitle("select folder");
                     if (Files.isDirectory(Paths.get(mapPath.get(selected)))) {
                         myfileChooser.setCurrentDirectory(new File(mapPath.get(selected)));
                     }
+
+                    myfileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                     int findresult = myfileChooser.showOpenDialog(window);
                     if (findresult == myfileChooser.APPROVE_OPTION) {
                         String pathClient = myfileChooser.getCurrentDirectory().getAbsolutePath();
@@ -199,13 +211,13 @@ public class DashboardServer {
                             Object[] obj = new Object[] { tableModel.getRowCount() + 1, pathClient,
                                     dateFormat.format(date), "Change path",
                                     selected,
-                                    "Change path monitoring systtem" };
+                                    "Change path monitoring system" };
 
                             String data = "{" + (tableModel.getRowCount() + 1) + ","
                                     + pathClient + "," +
                                     dateFormat.format(date).toString() + "," + "Change path" + "," +
                                     selected + "," +
-                                    "Change path monitoring systtem" + "}";
+                                    "Change path monitoring system" + "}";
 
                             WriteLogs wr = new WriteLogs();
                             wr.writeFile(String.valueOf(data), path);
@@ -255,6 +267,7 @@ public class DashboardServer {
         });
     }
 
+    // read file log
     public void readFile(String path) {
         try {
             Scanner scan = new Scanner(new File(path), "UTF-8");

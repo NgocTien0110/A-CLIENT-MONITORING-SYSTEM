@@ -44,8 +44,8 @@ public class ServerHandle implements Runnable {
         while (flag) {
             try {
                 s = ss.accept();
-                listaClient.add(s);
                 new Thread(new ServerData(s, listaClient, nameClient, map)).start();
+                listaClient.add(s);
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(null, "Close server");
             }

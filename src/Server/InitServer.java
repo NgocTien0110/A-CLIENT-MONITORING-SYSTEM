@@ -48,7 +48,7 @@ public class InitServer{
         JPanel bodyPort = new JPanel();
         JLabel labelPort = new JLabel("Port: ");
         labelPort.setFont(new Font("Serif", Font.PLAIN, 20));
-        jtextport = new JTextField("8888");
+        jtextport = new JTextField("2022");
         jtextport.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 char c = evt.getKeyChar();

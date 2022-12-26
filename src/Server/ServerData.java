@@ -46,7 +46,7 @@ public class ServerData implements Runnable {
                 String path = strs[3]; // path
 
                 if (info.equals("1")) {
-                    sendAllClient(listClient, name, "1", "");
+//                    sendAllClient(listClient, name, "1", "");
                 } else if (info.equals("2")) { // 2 para login
                     if (!nameClient.contains(name)) {
                         nameClient.add(name);
@@ -54,7 +54,7 @@ public class ServerData implements Runnable {
                         DashboardServer.mapSocket.put(name, socket);
                         DashboardServer.mapPath.put(name, path);
                         DashboardServer.jListClients.setListData(nameClient);
-                        sendAllClient(listClient, message, "2", name);
+
                         // get time now
                         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                         Date date = new Date();
@@ -74,6 +74,7 @@ public class ServerData implements Runnable {
                         // hiển thị trên bảng Dashboard
                         DashboardServer.tableModel.addRow(obj);
                         DashboardServer.jtableClients.setModel(DashboardServer.tableModel);
+                        sendAClient(socket, message, "2", name);
                     } else {
                         listClient.remove(socket);
                         sendAClient(socket, "", "4", "server");
@@ -107,7 +108,7 @@ public class ServerData implements Runnable {
                     DashboardServer.mapSocket.remove(name);
                     DashboardServer.mapPath.remove(name);
                     DashboardServer.jListClients.setListData(nameClient);
-                    sendAllClient(listClient, nameClient, "3", name);
+                    sendAClient(socket, nameClient, "3", name);
                     socket.close();
                     break;
                 } else if (info.equals("10")) { // created

@@ -53,8 +53,8 @@ public class ClientData implements Runnable {
                                 dateFormat.format(date), "Disconnected",
                                 DashboardClient.nameClient,
                                 DashboardClient.nameClient + " disconnected to server!" };
-                        DashboardClient.tableModel.addRow(obj);
-                        DashboardClient.jtableClients.setModel(DashboardClient.tableModel);
+//                        DashboardClient.tableModel.addRow(obj);
+//                        DashboardClient.jtableClients.setModel(DashboardClient.tableModel);
                     }
                 } else if (info.equals("4")) {
                     DashboardClient.jButtonConnect.setText("Log-in");

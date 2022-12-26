@@ -24,15 +24,11 @@ import java.util.Date;
  */
 public class DashboardClient {
     public static JFrame window;
-    private JLabel jLabelIP;
     private JTextField jTextFieldIP;
-    private JLabel jLabelPort;
     private JTextField jTextFieldPort;
     private JLabel jLabelName;
     public static JLabel jLabelPath;
-//    private JButton jButtonChooseFile;
     public static JButton jButtonConnect;
-//    private JButton jButtonLogs;
     private JButton jButtonExit;
     private JTextField jtextSearch;
     private JButton jbuttonSearch;
@@ -46,6 +42,7 @@ public class DashboardClient {
 
 
     public DashboardClient(String ip, int port, String name) {
+
         if (socket != null && socket.isConnected()) {
             JOptionPane.showMessageDialog(window, "Connected!");
         } else {
@@ -54,17 +51,32 @@ public class DashboardClient {
                 nameClient = name;
                 ipClient = ip;
                 portClient = port;
-                ClientData.sendData(socket, name, "2", "Connected", path); // info = 2 : connected
-                new Thread(new ClientData(socket)).start();
 
+                // tạo giao diện
+                init(ip, port, name);
+                // gửi dữ liệu lên server
+                ClientData.sendData(socket, name, "2", "Connected", path); // info = 2 : connected
+
+                // get time now
+                DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                Date date = new Date();
+                // thêm vào table
+                Object[] obj = new Object[] { tableModel.getRowCount() + 1, path,
+                        dateFormat.format(date), "Connected",
+                        nameClient,
+                        nameClient + " connected to server!" };
+                tableModel.addRow(obj);
+                jtableClients.setModel(tableModel);
+                new Thread(new ClientData(socket)).start();
+                new Thread(new WatchFolder(socket)).start();
             } catch (Exception e2) {
                 // nếu không kết nối được
                 JOptionPane.showMessageDialog(window, "Can't connect to server! Please check your IP and Port!");
+                new InitClient();
             }
         }
-        // tạo giao diện
-        init(ip, port, name);
-        new Thread(new WatchFolder(socket)).start();
+
+
     }
 
      public void init(String ip, int port, String name) {

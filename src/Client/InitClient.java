@@ -38,7 +38,7 @@ public class InitClient {
         JPanel bodyIP = new JPanel();
         JLabel labelIp = new JLabel("IP: ");
         labelIp.setFont(new Font("Serif", Font.PLAIN, 20));
-        jtextIP = new JTextField("127.0.0.1");
+        jtextIP = new JTextField();
         jtextIP.setSize(new Dimension(100, 50));
         jtextIP.setPreferredSize(new Dimension(200, 30));
         bodyIP.add(labelIp);
@@ -47,7 +47,7 @@ public class InitClient {
         JPanel bodyPort = new JPanel();
         JLabel labelPort = new JLabel("Port: ");
         labelPort.setFont(new Font("Serif", Font.PLAIN, 20));
-        jtextPort = new JTextField("8888");
+        jtextPort = new JTextField("2022");
         jtextPort.setSize(new Dimension(100, 50));
         jtextPort.setPreferredSize(new Dimension(200, 30));
         bodyPort.add(labelPort);

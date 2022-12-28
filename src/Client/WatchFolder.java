@@ -11,7 +11,7 @@ import java.util.Date;
  * Client
  * Create by Đặng Ngọc Tiến
  * Date 12/19/2022 - 4:15 PM
- * Description: ...
+ * Description: Watch folder
  */
 public class WatchFolder implements Runnable {
     public static WatchService watchService;
@@ -51,12 +51,13 @@ public class WatchFolder implements Runnable {
                     // STEP6: Check type of event.
                     WatchEvent.Kind<?> kind = event.kind();
 
+                    // get time now
+                    DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                    Date date = new Date();
+
                     // STEP7: Perform necessary action with the event
                     if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
                         System.out.println("File Created: " + fileName);
-                        // get time now
-                        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                        Date date = new Date();
 
                         // tạo object để thêm vào table
                         Object[] obj = new Object[] { DashboardClient.tableModel.getRowCount() + 1,
@@ -74,9 +75,6 @@ public class WatchFolder implements Runnable {
 
                     if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
                         System.out.println("A file has been deleted: " + fileName);
-                        // get time now
-                        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                        Date date = new Date();
 
                         // tạo object để thêm vào table
                         Object[] obj = new Object[] { DashboardClient.tableModel.getRowCount() + 1,
@@ -93,9 +91,6 @@ public class WatchFolder implements Runnable {
                     }
                     if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
                         System.out.println("A file has been modified: " + fileName);
-                        // get time now
-                        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                        Date date = new Date();
 
                         // tạo object để thêm vào table
                         Object[] obj = new Object[] { DashboardClient.tableModel.getRowCount() + 1,

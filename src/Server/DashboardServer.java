@@ -294,8 +294,19 @@ public class DashboardServer {
         }
     }
 
-    public static void main(String[] args) {
-        new DashboardServer(8888);
-
+    synchronized public static void addRowToJTable(String path, String action, String name,String message) {
+        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        Date date = new Date();
+        Object[] obj = new Object[] { tableModel.getRowCount() + 1, path,
+                dateFormat.format(date), action, name, message };
+        // hiển thị trên bảng Dashboard
+        tableModel.addRow(obj);
+        jtableClients.setModel(tableModel);
     }
+
+
+//    public static void main(String[] args) {
+//        new DashboardServer(2022);
+//
+//    }
 }

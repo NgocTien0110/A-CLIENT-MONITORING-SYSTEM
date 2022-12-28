@@ -2,10 +2,8 @@ package Server;
 
 
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import javax.swing.table.DefaultTableModel;
+import java.io.*;
 import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -40,66 +38,36 @@ public class ServerData implements Runnable {
             while (true) {
                 String s = brIn.readLine();
                 String[] strs = s.split(",,");
-                String info = strs[0]; // number
+                String infoMode = strs[0]; // mode
                 String name = strs[1]; // name client
                 String message = strs[2]; // message
                 String path = strs[3]; // path
+                // get time now
+                DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                Date date = new Date();
 
-                if (info.equals("1")) {
-//                    sendAllClient(listClient, name, "1", "");
-                } else if (info.equals("2")) { // 2 para login
+               if (infoMode.equals("1")) { // 1 connect
                     if (!nameClient.contains(name)) {
+                        // add name client
                         nameClient.add(name);
-                        // thêm client vào map
+
+                        // hiển thị lại danh sách client
                         DashboardServer.mapSocket.put(name, socket);
                         DashboardServer.mapPath.put(name, path);
                         DashboardServer.jListClients.setListData(nameClient);
+                        DashboardServer.addRowToJTable(path, "Connected", name, message);
 
-                        // get time now
-                        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                        Date date = new Date();
-
-                        Object[] obj = new Object[] { DashboardServer.tableModel.getRowCount() + 1, path,
-                                dateFormat.format(date), "Connected",
-                                name, name + " connected to server!" };
-
-                        String data = "{" + (DashboardServer.tableModel.getRowCount() + 1) + ","
-                                + path + "," +
-                                dateFormat.format(date).toString() + "," + "Connected" + "," +
-                                name + "," + message + "}";
                         // ghi vào file logs
+                        String data = "{" + (DashboardServer.tableModel.getRowCount() + 1) + "," + path + "," + dateFormat.format(date).toString() + "," + "Connected" + "," + name + "," + message + "}";
                         WriteLogs wr = new WriteLogs();
                         wr.writeFile(String.valueOf(data), DashboardServer.path);
 
-                        // hiển thị trên bảng Dashboard
-                        DashboardServer.tableModel.addRow(obj);
-                        DashboardServer.jtableClients.setModel(DashboardServer.tableModel);
-                        sendAClient(socket, message, "2", name);
+                        sendAClient(socket, message, "1", name);
                     } else {
                         listClient.remove(socket);
                         sendAClient(socket, "", "4", "server");
                     }
-                } else if (info.equals("3")) { // disconnect
-                    // get time now
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                    Date date = new Date();
-
-                    Object[] obj = new Object[] { DashboardServer.tableModel.getRowCount() + 1, path,
-                            dateFormat.format(date), "Disconnected",
-                            name, name + " disconnected to server!" };
-
-                    String data = "{" + (DashboardServer.tableModel.getRowCount() + 1) + ","
-                            + path + "," +
-                            dateFormat.format(date).toString() + "," + "Disconnected" + "," +
-                            name + "," + message + "}";
-                    // ghi vào file logs
-                    WriteLogs wr = new WriteLogs();
-                    wr.writeFile(String.valueOf(data), DashboardServer.path);
-
-                    // hiển thị trên bảng Dashboard
-                    DashboardServer.tableModel.addRow(obj);
-                    DashboardServer.jtableClients.setModel(DashboardServer.tableModel);
-
+                } else if (infoMode.equals("2")) { // disconnect
                     // xóa client khỏi list
                     nameClient.remove(name);
                     listClient.remove(socket);
@@ -108,64 +76,39 @@ public class ServerData implements Runnable {
                     DashboardServer.mapSocket.remove(name);
                     DashboardServer.mapPath.remove(name);
                     DashboardServer.jListClients.setListData(nameClient);
-                    sendAClient(socket, nameClient, "3", name);
-                    socket.close();
+
+                    // thêm vào table
+                   DashboardServer.addRowToJTable(path, "Disconnected", name, message);
+
+                    // ghi vào file logs
+                    String data = "{" + (DashboardServer.tableModel.getRowCount() + 1) + "," + path + "," + dateFormat.format(date).toString() + "," + "Disconnected" + "," + name + "," + message + "}";
+                    WriteLogs wr = new WriteLogs();
+                    wr.writeFile(String.valueOf(data), DashboardServer.path);
+
+                    sendAClient(socket, nameClient, "2", name);
+                    socket.close(); // close socket
                     break;
-                } else if (info.equals("10")) { // created
-                    // get time now
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                    Date date = new Date();
-
-                    Object[] obj = new Object[] { DashboardServer.tableModel.getRowCount() + 1, path,
-                            dateFormat.format(date), "Created", name, message };
-
-                    String data = "{" + (DashboardServer.tableModel.getRowCount() + 1) + ","
-                            + path + "," + dateFormat.format(date).toString() + "," + "Created" + "," +
-                            name + "," + message + "}";
-
-                    WriteLogs wr = new WriteLogs();
-                    wr.writeFile(String.valueOf(data), DashboardServer.path);
-                    DashboardServer.tableModel.addRow(obj);
-                    DashboardServer.jtableClients.setModel(DashboardServer.tableModel);
-
-                } else if (info.equals("11")) { // deleted
-                    // get time now
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                    Date date = new Date();
-
-                    Object[] obj = new Object[] { DashboardServer.tableModel.getRowCount() + 1, path,
-                            dateFormat.format(date), "Deleted", name, message };
-
-                    String data = "{" + (DashboardServer.tableModel.getRowCount() + 1) + ","
-                            + path + "," + dateFormat.format(date).toString() + "," +
-                            "Deleted" + "," + name + "," + message + "}";
+                } else if (infoMode.equals("10")) { // created
+                   DashboardServer.addRowToJTable(path, "Created", name, message);
 
                     // ghi vào file logs
+                    String data = "{" + (DashboardServer.tableModel.getRowCount() + 1) + "," + path + "," + dateFormat.format(date).toString() + "," + "Created" + "," + name + "," + message + "}";
                     WriteLogs wr = new WriteLogs();
                     wr.writeFile(String.valueOf(data), DashboardServer.path);
-
-                    // hiển thị trên bảng Dashboard
-                    DashboardServer.tableModel.addRow(obj);
-                    DashboardServer.jtableClients.setModel(DashboardServer.tableModel);
-
-                } else if (info.equals("12")) { // modified
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                    Date date = new Date();
-
-                    Object[] obj = new Object[] { DashboardServer.tableModel.getRowCount() + 1, path,
-                            dateFormat.format(date), "Modified", name, message };
-
-                    String data = "{" + (DashboardServer.tableModel.getRowCount() + 1) + ","
-                            + path + "," + dateFormat.format(date).toString() + "," + "Modified" + "," +
-                            name + "," + message + "}";
+                } else if (infoMode.equals("11")) { // deleted
+                   DashboardServer.addRowToJTable(path, "Deleted", name, message);
 
                     // ghi vào file logs
+                    String data = "{" + (DashboardServer.tableModel.getRowCount() + 1) + "," + path + "," + dateFormat.format(date).toString() + "," + "Deleted" + "," + name + "," + message + "}";
                     WriteLogs wr = new WriteLogs();
                     wr.writeFile(String.valueOf(data), DashboardServer.path);
+                } else if (infoMode.equals("12")) { // modified
+                   DashboardServer.addRowToJTable(path, "Modified", name, message);
 
-                    // hiển thị trên bảng Dashboard
-                    DashboardServer.tableModel.addRow(obj);
-                    DashboardServer.jtableClients.setModel(DashboardServer.tableModel);
+                    // ghi vào file logs
+                    String data = "{" + (DashboardServer.tableModel.getRowCount() + 1) + "," + path + "," + dateFormat.format(date).toString() + "," + "Modified" + "," + name + "," + message + "}";
+                    WriteLogs wr = new WriteLogs();
+                    wr.writeFile(String.valueOf(data), DashboardServer.path);
                 }
             }
         } catch (IOException e) {
@@ -189,4 +132,5 @@ public class ServerData implements Runnable {
             pwOut.println(messages);
         }
     }
+
 }

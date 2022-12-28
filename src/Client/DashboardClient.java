@@ -55,7 +55,7 @@ public class DashboardClient {
                 // tạo giao diện
                 init(ip, port, name);
                 // gửi dữ liệu lên server
-                ClientData.sendData(socket, name, "2", "Connected", path); // info = 2 : connected
+                ClientData.sendData(socket, name, "1", "Connected", path); // info = 1 : connected
 
                 // get time now
                 DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
@@ -115,7 +115,7 @@ public class DashboardClient {
                         jButtonConnect.setText("Disconnect");
 
                         //gửi data lên server và bắt đầu thread nhận data
-                        ClientData.sendData(socket, nameClient, "2", "Connected", path);
+                        ClientData.sendData(socket, nameClient, "1", "Connected", path);
                         new Thread(new ClientData(socket)).start();
                         new Thread(new WatchFolder(socket)).start();
 
@@ -139,7 +139,7 @@ public class DashboardClient {
                         jButtonConnect.setText("Connect");
 
                         // gửi data lên server và đóng socket và thread nhận data
-                        ClientData.sendData(socket, nameClient, "3", "Disconnected", path);
+                        ClientData.sendData(socket, nameClient, "2", "Disconnected", path);
                         WatchFolder.watchService.close();
                         socket.close();
                         socket = null;
@@ -200,7 +200,7 @@ public class DashboardClient {
             public void actionPerformed(ActionEvent e) {
                 if (socket != null && socket.isConnected()) {
                     try {
-                        ClientData.sendData(socket, nameClient, "3", "Disconnected", path);
+                        ClientData.sendData(socket, nameClient, "2", "Disconnected", path);
                         socket.close();
                         WatchFolder.watchService.close();
                     } catch (IOException e1) {
@@ -234,17 +234,7 @@ public class DashboardClient {
         bodyCenter.add(bodyCenterSearch, BorderLayout.NORTH);
 
         // get dữ liệu
-        tableModel = new DefaultTableModel(column, 0){
-            public Class getColumnClass(int column) {
-                Class returnValue;
-                if ((column >= 0) && (column < getColumnCount())) {
-                    returnValue = getValueAt(0, column).getClass();
-                } else {
-                    returnValue = Object.class;
-                }
-                return returnValue;
-            }
-        };
+        tableModel = new DefaultTableModel(column, 0);
         jtableClients = new JTable(tableModel);
         jtableClients.setRowHeight(30);
 
@@ -294,7 +284,7 @@ public class DashboardClient {
             public void windowClosing(WindowEvent e) {
                 if (socket != null && socket.isConnected()) {
                     try {
-                        ClientData.sendData(socket, nameClient, "3", "Disconnected", path);
+                        ClientData.sendData(socket, nameClient, "2", "Disconnected", path);
                         socket.close();
                         WatchFolder.watchService.close();
                     } catch (IOException e1) {

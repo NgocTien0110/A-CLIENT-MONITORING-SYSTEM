@@ -32,12 +32,12 @@ public class ClientData implements Runnable {
                 String[] strs = s.split("\\.");
                 String info = strs[0];
                 String name = strs[2], line = strs[1];
-                if (info.equals("1")) {
-                } else if (info.equals("2") || info.equals("3")) {
-                    // get time now
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                    Date date = new Date();
-                    if (info.equals("2")) { // connect
+                // get time now
+                DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                Date date = new Date();
+
+                if (info.equals("1") || info.equals("2")) {
+                    if (info.equals("1")) { // connect
                         // thêm vào table
                         Object[] obj = new Object[] { DashboardClient.tableModel.getRowCount() + 1,
                                 DashboardClient.path,
@@ -63,10 +63,6 @@ public class ClientData implements Runnable {
                     JOptionPane.showMessageDialog(DashboardClient.window, "Someone used this username!");
                     break;
                 } else if (info.equals("13")) { // thay đổi path
-                    // get time now
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                    Date date = new Date();
-
                     // đổi path trong giao diện
                     DashboardClient.path = line + "\\";
                     DashboardClient.jLabelPath.setText(line);
@@ -83,13 +79,8 @@ public class ClientData implements Runnable {
                     // đóng watch service và mở lại watch service mới
                     WatchFolder.watchService.close();
                     new Thread(new WatchFolder(this.socket)).start();
-
                     break;
                 } else if (info.equals("5")) { // Die server
-                    // get time now
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                    Date date = new Date();
-
                     // thêm vào table
                     Object[] obj = new Object[] { DashboardClient.tableModel.getRowCount() + 1,
                             DashboardClient.path,

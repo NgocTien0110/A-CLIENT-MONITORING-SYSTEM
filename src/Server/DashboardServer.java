@@ -200,9 +200,11 @@ public class DashboardServer {
                     }
 
                     myfileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    myfileChooser.setAcceptAllFileFilterUsed(false);
                     int findresult = myfileChooser.showOpenDialog(window);
                     if (findresult == myfileChooser.APPROVE_OPTION) {
-                        String pathClient = myfileChooser.getCurrentDirectory().getAbsolutePath();
+                        String pathClient = myfileChooser.getCurrentDirectory().getPath();
+                        System.out.println(pathClient);
                         try {
                             ServerData.sendAClient(mapSocket.get(selected), pathClient, "13", "Server");
                             DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
